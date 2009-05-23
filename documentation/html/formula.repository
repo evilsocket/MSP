@@ -1,0 +1,11 @@
+\form#0:$ g(x,y;\lambda,\theta,\psi,\sigma,\gamma)=\exp\left(-\frac{x'^2+\gamma^2y'^2}{2\sigma^2}\right)\cos\left(2\pi\frac{x'}{\lambda}+\psi\right) $
+\form#1:$ x' = x \cos\theta + y \sin\theta\, $
+\form#2:$ y' = -x \sin\theta + y \cos\theta\, $
+\form#3:$ \mathbf{A} $
+\form#4:$ \mathbf{G_x} $
+\form#5:$ \mathbf{G_y} $
+\form#6:$ \mathbf{G_x} = \begin{array}{ccc} -1 & 0 & +1 \\ -1 & 0 & +1 \\ -1 & 0 & +1 \end{array} * \mathbf{A} \quad \mbox{and} \quad \mathbf{G_y} = \begin{array}{ccc} -1 & -1 & -1 \\ 0 & 0 & 0 \\ +1 & +1 & +1 \end{array} * \mathbf{A} $
+\form#7:$ P(t) = \frac{1}{1 + e^{-t}} $
+\form#8:$ f (x) = sigmoid \left(\sum_i w_i g_i(x)\right) $
+\form#9:$ g_i (x) = \sum_i output_i w_i $
+\form#10:$ error = \left(\sum_i (target_i - output_i)^2\right) / 2 $

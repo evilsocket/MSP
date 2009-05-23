@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="39">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="examples" displayName="examples" projectFiles="true">
+      <itemPath>examples/ai.cpp</itemPath>
+      <itemPath>examples/fingerprint.cpp</itemPath>
+      <itemPath>examples/gui.cpp</itemPath>
+      <itemPath>examples/motiondetection.cpp</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+    <itemPath>msp.hpp</itemPath>
+  </logicalFolder>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Debug" type="1">
+      <toolsSet>
+        <compilerSet>GNU</compilerSet>
+        <cRequired>true</cRequired>
+        <cppRequired>true</cppRequired>
+        <fortranRequired>false</fortranRequired>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="examples/ai.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="examples/fingerprint.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="examples/gui.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="examples/motiondetection.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="msp.hpp">
+        <itemTool>3</itemTool>
+      </item>
+    </conf>
+    <conf name="Release" type="1">
+      <toolsSet>
+        <compilerSet>GNU</compilerSet>
+        <cRequired>true</cRequired>
+        <cppRequired>true</cppRequired>
+        <fortranRequired>false</fortranRequired>
+        <platform>2</platform>
+      </toolsSet>
+      <compileType>
+        <cCompilerTool>
+          <developmentMode>5</developmentMode>
+        </cCompilerTool>
+        <ccCompilerTool>
+          <developmentMode>5</developmentMode>
+        </ccCompilerTool>
+        <fortranCompilerTool>
+          <developmentMode>5</developmentMode>
+        </fortranCompilerTool>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+      </compileType>
+      <item path="examples/ai.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="examples/fingerprint.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="examples/gui.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="examples/motiondetection.cpp">
+        <itemTool>1</itemTool>
+      </item>
+      <item path="msp.hpp">
+        <itemTool>3</itemTool>
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>
