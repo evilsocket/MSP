@@ -1,0 +1,25 @@
+MSP - Multi-dimensional Space Porcessing library
+by Simone Margaritelli aka evilsocket
+<evilsocket@gmail.com - http://www.evilsocket.net>
+
+MSP is a C++ template class oriented to digital signal processing such as image manipulation, computer vision, biometry and so on .
+Actually the main core is the "Matrix" class, with many doxy-documented features such as :
+
+    * Addition/subtraction mask applying .
+    * Saving and loading feature from/to any image format .
+    * Selective or adaptive resize .
+    * Low-pass/high-pass filters .
+    * Orientation mask computation .
+    * Gabor operator and enhancement .
+    * Entropy computaiton .
+    * Prewitt edge detector .
+    * Hit-and-miss image thinning .
+    * Frequency map computing and histogram computing .
+    * Blurring and softening .
+    * Dilate & erode .
+    * Mean, variance, deviance, etc .
+    * Binarization and normalization .
+    * Image integration.
+    * Biometric features such as fingerprint features recognition and matching .
+	* Back-propagation neural network features .
+	* And so on, and on, and on :D
