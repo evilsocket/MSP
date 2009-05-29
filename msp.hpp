@@ -3,7 +3,7 @@
  *   @version 0.1beta                                                      *
  *   @brief Multi-dimensional Space Processing Library .                   *
  *   @author Simone Margaritelli (aka evilsocket) <evilsocket@gmail.com>   *
- *                       		                                   *
+ *                       		                                           *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -34,8 +34,10 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include <pthread.h>
 #include <X11/Xlib.h>
-#include <X11/keysym.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
 
 #include <exception>
 #include <string>
@@ -46,6 +48,7 @@ using std::string;
 
 
 typedef unsigned int uint;
+typedef unsigned char byte;
 
 /**
  * @namespace MSP
@@ -1283,6 +1286,247 @@ class AI {
                 throw MSPException( __FILE__, __LINE__, "Could not open file `%s` to load the network .", filepath );
             }
         }
+};
+
+template <typename T> class Gui {
+private :
+	Display           *m_display;
+    Window             m_window;
+    GC                 m_gc;
+	XWindowAttributes  m_wattr;
+	
+	unsigned int       m_width,
+				       m_height;
+	char               m_title[0xFF];
+	
+	XImage            *m_ximage;
+	unsigned char     *m_data;
+
+	
+	static void * event_dispatcher( void *arg ){
+		Gui   *gui = (Gui *)arg;
+		XEvent event;
+
+		while(1){
+			/* get the next event - we receive only events we set the mask for */
+			XNextEvent( gui->m_display, &event );
+			switch(event.type) {
+				case CreateNotify : 
+					gui->OnInitialize();
+				break;
+				
+				case DestroyNotify : 
+					gui->OnClose();
+				break; 
+				
+				case Expose :
+					if( event.xexpose.count == 0 ) {
+						gui->update( event.xexpose.x, event.xexpose.y );
+					}
+				break;
+				
+				case KeyPress   : 
+				case KeyRelease : 
+					if( event.xkey.type == KeyPress ){
+						gui->OnKeyDown( event.xkey.keycode, event.xkey.state );
+					}
+					else{
+						gui->OnKeyUp( event.xkey.keycode, event.xkey.state );
+					}
+				break;
+				
+				case ButtonPress   : 
+				case ButtonRelease : 
+					if( event.xbutton.type == ButtonPress ){
+						gui->OnMouseDown( event.xbutton.x, event.xbutton.y, event.xbutton.button );
+					}
+					else{
+						gui->OnMouseUp( event.xbutton.x, event.xbutton.y, event.xbutton.button );
+					}
+				break;
+				
+				case MotionNotify : 
+					gui->OnMouseMove( event.xmotion.x, event.xmotion.y );
+				break;
+			}
+		}
+		
+		return NULL;
+	}
+	
+	inline void create( const char *title, uint width, uint height ){
+		strncpy( m_title, (title ? title : "MSP"), 0xFF );
+		m_width   = width;
+		m_height  = height;
+		
+		/* connect to XServer (default display) */
+		if( (m_display = XOpenDisplay(NULL)) == NULL ){
+			throw MSPException( __FILE__, __LINE__, "Could not connect to X server ." );
+		}
+
+		/* get screen capabilities */
+		unsigned int screen  = DefaultScreen(m_display);
+
+		/* create the window */
+		m_window = XCreateSimpleWindow( m_display, 
+										RootWindow( m_display, screen ),
+										0 /* X */, 
+										0 /* Y */, 
+										m_width, 
+										m_height, 
+										0,
+										BlackPixel( m_display, screen ), 
+										WhitePixel( m_display, screen ) );
+		
+		/* set window size properties */
+		XSizeHints xsizeh;
+		
+		xsizeh.flags      = USPosition | USSize;
+		xsizeh.x          = 0;
+		xsizeh.y          = 0;
+		xsizeh.width      = m_width;
+		xsizeh.height     = m_height;
+		xsizeh.min_width  = m_width;
+		xsizeh.min_height = m_height;
+		xsizeh.max_width  = m_width;
+		xsizeh.max_height = m_height;
+		
+		XSetNormalHints( m_display, m_window, &xsizeh );
+		XSetWMSizeHints( m_display, m_window, &xsizeh, PSize | PMinSize | PMaxSize );
+		XStoreName( m_display, m_window, m_title );
+
+		/* create graphics context */
+		XGCValues     values;
+		unsigned long vmask = 0;
+		
+		XGetWindowAttributes( m_display, m_window, &m_wattr );
+		m_gc = XCreateGC( m_display, m_window, vmask, &values );
+		XSetBackground( m_display, m_gc, WhitePixel( m_display, screen ) );
+		XSetForeground( m_display, m_gc, BlackPixel( m_display, screen ) );
+		XSetLineAttributes( m_display, m_gc, 1, LineSolid, CapRound, JoinRound );
+		
+		XSetWindowAttributes attr[1];
+		attr[0].backing_store  = Always;
+		attr[0].backing_planes = 1;
+		attr[0].backing_pixel  = BlackPixel( m_display, screen );
+		XChangeWindowAttributes( m_display, m_window, CWBackingStore | CWBackingPlanes | CWBackingPixel, attr );
+
+		/* Select input methods */
+		long eventmask = ExposureMask        | 
+						 KeyPressMask        | KeyReleaseMask    |
+						 ButtonPressMask     | ButtonReleaseMask |
+						 PointerMotionMask   | StructureNotifyMask | 
+						 SubstructureRedirectMask | VisibilityChangeMask;
+		XSelectInput( m_display, m_window, eventmask );
+		
+		/* initialize the XImage */
+		uint bpp; 
+		switch( m_wattr.depth ){
+			case 8:
+				bpp = 1;
+			break;
+
+			case 16:
+				bpp = 2;
+			break;
+
+			case 24:
+			case 32:
+				bpp = 4;
+			break;
+
+			default:
+				throw MSPException( __FILE__, __LINE__, "Unsupported display depth ." );
+		}
+		   
+		m_data   = new unsigned char[ m_width * m_height * bpp ];
+		m_ximage = XCreateImage( m_display, 
+								 m_wattr.visual, 
+								 m_wattr.depth, 
+								 ZPixmap, 
+								 0,
+								 (char *)m_data, 
+								 m_width, 
+								 m_height, 
+								 8,
+								 /* let X guess scanline size */ 
+								 0 );
+											 
+		if( XInitImage(m_ximage) == 0 ){
+			throw MSPException( __FILE__, __LINE__, "Could not initialize frame buffer ximage ." );
+		}						
+
+		/* display the window */
+		XMapWindow( m_display, m_window );
+		XSync( m_display, 0 );
+
+		pthread_t tid;
+		pthread_create( &tid, NULL, event_dispatcher, (void *)this );
+	}
+	
+	typedef struct {
+		byte r;
+		byte g;
+		byte b;
+	}
+	rgb_t;
+	
+public  :
+
+	Gui( const char *title, uint width, uint height ){
+		create(title,width,height);
+	}
+	
+	Gui( Matrix<T>& img ){
+		create( NULL, img.width, img.height );
+		draw(img);	
+	}
+	
+	~Gui(){
+		XFree(m_ximage);	
+	}
+	
+	inline void draw( Matrix<T>& img ){
+		uint x, y, z;
+		unsigned long color;
+		rgb_t rgb;
+		for( x = 0; x < img.width; x++ ){
+			for( y = 0; y < img.height; y++ ){
+				/*for( z = 0; z < 3; z++ ){
+					m_data[ (x + m_width * y) * 4 + z ] = (unsigned char)img[x][y][z];	
+				}
+				*/
+				rgb.r = (unsigned char)img[x][y][0];	
+				rgb.g = (unsigned char)img[x][y][1];	
+				rgb.b = (unsigned char)img[x][y][2];	
+				memcpy( &m_data[ (x + m_width * y) * 4 ], &rgb, 3 );
+			}	
+		}
+		update();
+	}
+	
+	inline void update( uint x = 0, uint y = 0 ){
+		OnPaint();
+		XPutImage( m_display, 
+				   m_window, 
+				   m_gc, 
+				   m_ximage,
+				   x, 
+				   y,
+				   x, 
+				   y,
+				   m_width, 
+				   m_height );	
+	}
+	
+	virtual void OnPaint(){}
+	virtual void OnClose(){}
+	virtual void OnMouseMove( uint x, uint y ){}
+	virtual void OnMouseDown( uint button, uint x, uint y ){}
+	virtual void OnMouseUp( uint button, uint x, uint y ){}
+	virtual void OnInitialize(){}
+	virtual void OnKeyDown( uint key, uint mask ){}
+	virtual void OnKeyUp( uint key, uint mask ){}
 };
         
 template <typename T> 
